@@ -1,6 +1,7 @@
 { stdenv, lib, fetchFromGitHub, rustPlatform
 , openssl, pkgconfig, protobuf
-, Security, libiconv, rdkafka
+, Security, libiconv, rdkafka, cmake
+, tzdata
 
 , features ?
     (if stdenv.isAarch64
@@ -10,17 +11,18 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "vector";
-  version = "0.6.0";
+  version = "0.7.0";
 
   src = fetchFromGitHub {
     owner  = "timberio";
     repo   = pname;
     rev    = "refs/tags/v${version}";
-    sha256 = "0bb4552nwkdpnxhaq2mn4iz5w92ggqxc1b78jq2vjbh1317sj9hw";
+    sha256 = "0w1gkdl57la6adkql9ym36xsr395qnm9jbjgiqhcblvbrpysc35z";
   };
 
-  cargoSha256 = "1akyzrscc6pv7ggb1kna05vvxhfzrf1b4kji4bah1ry3yyqxdjsj";
-  buildInputs = [ openssl pkgconfig protobuf rdkafka ]
+
+  cargoSha256 = "01hynn8ccpwqrirr1bczqc7q7pqkzfjks2v6q4f32xbm50b31fky";
+  buildInputs = [ openssl pkgconfig protobuf rdkafka cmake ]
                 ++ stdenv.lib.optional stdenv.isDarwin [ Security libiconv ];
 
   # needed for internal protobuf c wrapper library
@@ -28,7 +30,7 @@ rustPlatform.buildRustPackage rec {
   PROTOC_INCLUDE="${protobuf}/include";
 
   cargoBuildFlags = [ "--no-default-features" "--features" "${lib.concatStringsSep "," features}" ];
-  checkPhase = ":"; # skip tests, too -- they don't respect the rdkafka flag...
+  checkPhase = "TZDIR=${tzdata}/share/zoneinfo cargo test --no-default-features --features ${lib.concatStringsSep "," features} -- --skip parses_sink_full_es_aws";
 
   meta = with stdenv.lib; {
     description = "A high-performance logs, metrics, and events router";
